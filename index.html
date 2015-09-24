@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" ng-app="synthesizer">
+<head>
+	<meta charset="utf-8" />
+	<title>Synthesizer</title>
+	<style>
+		div
+		{
+			border: 1px solid #000;
+			margin: 10px 0;
+			width: 200px;
+		}
+	</style>
+</head>
+<body ng-controller="MainController">
+	<div oscillator frequency="329.628"></div>
+	<div oscillator frequency="195.998"></div>
+	<div oscillator frequency="130.813"></div>
+
+	<button ng-click="play()">Play</button>
+	<button ng-click="stop()">Stop</button>
+
+	<script src="js/libs/angular.js"></script>
+	<script src="js/libs/tone.js"></script>
+	<script>
+		angular.module('synthesizer', []);
+
+		angular.module('synthesizer').controller('MainController', ['$scope', 'gainNode', function ($scope, gainNode) {
+			$scope.play = play;
+			$scope.stop = stop;
+
+			function play() {
+				gainNode.gain.value = 1;
+			}
+
+			function stop() {
+				gainNode.gain.value = 0;
+			}
+		}]);
+
+		angular.module('synthesizer').factory('audioContext', function () {
+			return new (window.AudioContext || window.webkitAudioContext)();
+		});
+
+		angular.module('synthesizer').factory('gainNode', ['audioContext', function (audioContext) {
+			var gainNode = audioContext.createGain();
+
+			gainNode.gain.value = 0;
+			gainNode.connect(audioContext.destination);
+
+			return gainNode;
+		}]);
+
+		angular.module('synthesizer').directive('oscillator', ['audioContext', 'gainNode', function (audioContext, gainNode) {
+			return {
+				restrict: 'AE',
+				scope: {
+					frequency: '='
+				},
+				templateUrl: 'templates/oscillator.html',
+				link: function (scope, element, attrs) {
+					var osc = audioContext.createOscillator();
+					osc.type = scope.type;
+					osc.frequency.value = scope.frequency;
+					osc.connect(gainNode);
+					osc.start();
+
+					scope.changeFrequency = function() {
+						osc.frequency.value = scope.frequency;
+					}
+
+					scope.changeType = function (type) {
+						osc.type = type;
+					}
+				}
+			}
+		}]);
+	</script>
+</body>
+</html>
